@@ -4,52 +4,7 @@ import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm
 from collections import defaultdict
-from ccmodels.preprocessing.extractors.utils import constrainer
-
-def unique_neuronal_inputs(pt_root_id, neurons, client):
-    '''function to extract all the unique neuronal inputs for a postsynaptic cell
-    neurons: set of ids  of cells that are neurons, utilise the nucleus_neuron_svm table from Minnie65 v343 '''
-
-    input_df = client.materialize.synapse_query(post_ids = pt_root_id)
-    input_df = input_df.drop_duplicates(subset = 'pre_pt_root_id')
-    neuronal_inputs = input_df[input_df['pre_pt_root_id'].isin(neurons)]
-
-    return pd.DataFrame(neuronal_inputs)
-
-def unique_neuronal_outputs(pt_root_id, neurons, client):
-    '''function to extract all the unique neuronal outputs for a postsynaptic cell
-     neurons: set of ids  of cells that are neurons, utilise the nucleus_neuron_svm table from Minnie65 v343'''
-
-    output_df = client.materialize.synapse_query(pre_ids = pt_root_id)
-    output_df = output_df.drop_duplicates(subset = 'post_pt_root_id')
-    neuronal_outputs = output_df[output_df['post_pt_root_id'].isin(neurons)]
-
-    return pd.DataFrame(neuronal_outputs)
-
-
-
-def layer_extractor(input_df, transform, column = 'pre_pt_position'):
-    input_df['pial_distances'] = transform.apply(input_df[column])
-
-    #Use the y axis value to assign the corresponding layer as per Ding et al. 2023
-    layers = []
-    for i in input_df['pial_distances'].iloc[:]:
-        if 0<i[1]<=98:
-            layers.append('L1')
-        elif 98<i[1]<=283:
-            layers.append('L2/3')
-        elif 283<i[1]<=371:
-            layers.append('L4')
-        elif 371<i[1]<=574:
-            layers.append('L5')
-        elif 574<i[1]<=713:
-            layers.append('L6')
-        else:
-            layers.append('unidentified')
-
-    input_df['cortex_layer'] = layers   
-    return input_df
-
+from ccmodels.preprocessing.utils import constrainer
 
 def sig_cross_table(data, test, test_var, grouping_var):
     '''generates a cross table for significances between variables in data in the same grouping variables and
@@ -351,6 +306,39 @@ def compute_cur_delta_dist(connectome_subset):
         curdelta.append(delta[0])
     
     return curdelta
+
+
+# ------------------------------------
+# --- WORKING WITH CURRENT -----------
+# ------------------------------------
+
+"""
+def normalize_current(current, norm):
+    #return (current-np.min(current))/(np.max(current)-np.min(current))
+    return current / norm 
+"""
+
+def get_current_normalization(all_currents, mode="mean"):
+    """
+    Computes a constant to normalize all currents to. 
+    It can do it to the max, so all currents are smaller than 1, or to the mean current
+    mode can be eithe "mean" or "max". All_currents gives the table of currents to normalize from. 
+    """
+    if mode=="max":
+        maxcurr = 0.0
+        #Each element in the row is a list, so we have to work it out
+        for curr in all_currents:
+            maxcurr_neuron = np.max(curr)
+            if  maxcurr_neuron > maxcurr:
+                maxcurr = maxcurr_neuron
+        return maxcurr
+    elif mode=="mean":
+        meancurr = 0.0
+        for curr in all_currents:
+            meancurr += curr.sum()
+        return meancurr / (len(curr)*len(all_currents)) 
+
+
 
 if __name__ == '__main__':
     print(f'cwd: {os.getcwd()}')
