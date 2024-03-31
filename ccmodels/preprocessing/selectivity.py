@@ -11,8 +11,8 @@ def cell_area_identifiers(brain_area):
  
 
 def orientation_extractor(unit_key, fpd):
-    ''' This function allows to extract the mean activity corresponding to each repeat
-    of the direction shown as part of the Monet2 stimuli for a specified neuron
+    ''' For each of the Monet2 stimuli shown to the specified neuron, this function 
+    allows to extract the mean activity across frames with the same stimulus orientation. 
 
     Parameters:
     unit_key: dictionary specifying the value for the session, scan_idx and unit_idx keys
@@ -156,3 +156,20 @@ def is_selective(df, max_rad, single = True):
     statw, pw = wilcoxon(max_act, min_act)
     
     return statw, pw, min_rad
+
+def identify_multiscan(df, id_col = 'pt_root_id', count_col = 'session'):
+
+    rootid_groups = df.groupby([id_col]).count().reset_index()
+    multiscan_ids = rootid_groups[rootid_groups[count_col] > 1][id_col].values
+
+    return multiscan_ids
+
+def fpd_assignment(session, scan_idx):
+    if session == 9:
+        if scan_idx == 6:
+            fpd = 9
+        else:
+            fpd = 8
+    else:
+        fpd = 6
+    return fpd
