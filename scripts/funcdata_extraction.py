@@ -108,7 +108,7 @@ data = []
 columns = ['root_id', 'session', 'scan_idx','cell_id', 'pvalue','tuning_type', 
         'r_squared_diff', 'mean_r_sqrd', 'A', 'phi', 'k', 'activity', 'orientations']
 
-for mult_id in tqdm(multiscan_ids[:2], desc = f'Extracting multiscan neurons data') :
+for mult_id in tqdm(multiscan_ids, desc = f'Extracting multiscan neurons data') :
     subset_multiscan = v1l234_multiscan[v1l234_multiscan['pt_root_id'] == mult_id]
     scan_acts = []
     
@@ -163,11 +163,12 @@ for mult_id in tqdm(multiscan_ids[:2], desc = f'Extracting multiscan neurons dat
             
 #Save the data
 data_df = pd.DataFrame(data, columns = columns)
+#NOTE: Session, scan_idx and unit_id of these neurons refer to the values in the last row of the subset_multiscan df above
 data_df.to_pickle(f'../data/in_processing/orientation_fits/multiscan_fits.pkl')
 #Clean RAM
 del sub, unit_key, df, gp, pars_s, pars_d, pcov_s, pcov_d, ate_d, ate_s, r2d, r2s, rdiff, vs, ps, vdb, pdb, max_rad
 gc.collect()   
- 
+
 print('Extraction multi scan finished, saving data')
 
 #Joining all of the DataFrames
