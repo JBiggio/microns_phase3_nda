@@ -82,6 +82,83 @@ def orientation_extractor(unit_key, fpd):
     
     return df
 
+def orientation_extractor_v2(unit_key, fpd):
+    ''' For each of the Monet2 stimuli shown to the specified neuron, this function 
+    allows to extract the mean activity across frames with the same stimulus orientation. 
+    This version has only been added here and it only adds information on the session, scan and unit id of 
+    the neuron extracted in the dataframe.
+
+    Parameters:
+    unit_key: dictionary specifying the value for the session, scan_idx and unit_idx keys
+    fpd: frames per direction of the movie shown (might change in different session, scan_idx pairs)
+    
+    Returns:
+    df: DataFrame with a columnd showing the directions inn degrees, teh directionns in radians and the
+    mean activity of that cell across all the Monet2 trial that had that direction
+    '''
+    
+    #Select the movie trials in the appropiate session and scan
+    trial_key = {'session': unit_key['session'], 'scan_idx': unit_key['scan_idx']}
+    trial_info = nda.Trial & trial_key
+    
+    #Extract the direction variables for the Monet2 stimuli in these trials, matrix of shape [ntrials]
+    #within it each item is a matrix of shape [1, ndirs]
+    dirs = (trial_info* nda.Monet2).fetch('directions')
+    spike_trace = (nda.Activity() & unit_key).fetch1('trace')
+
+    #Extract start and end frames these have the same shape as the dirs matrix, ntrials
+    #each item is the start or end id
+    s = (trial_info * nda.Monet2).fetch('start_idx')
+    e = (trial_info * nda.Monet2).fetch('end_idx')
+    
+    #Loop thorugh them and calculate average activity and corresponding direction
+    directions=[]
+    m_act = []
+    trial_id = []
+    d = 0
+
+    #loop though each monet trial
+    for seg in range(len(s)):
+        st = s[seg]
+        en = e[seg]
+        c = 0
+
+        #extract the relevant spike trace segment
+        sp_red = spike_trace[st:en+1]
+        #loop though each x (depends on fpd) frames with same orientation
+        if fpd>6: #change number of frame that have the same direction since session 9 had a higher frame rate of 8
+            for i in range(0, sp_red.shape[0], fpd):
+                if c < 16:
+                    directions.append(dirs[d][0][c]) #d: monet trial number, 0: selects array, c: orientation index
+                    m_act.append(np.mean(sp_red[i:i+fpd])) #append mean activity to frames with same orientation
+                else:
+                    continue
+                    #directions.append(dirs[d][0][c])
+                    #m_act.append(np.mean(sp_red[i:]))
+                c+=1
+                trial_id.append(d)
+        else:    
+            for i in range(0, sp_red.shape[0], 6):
+                if c < 16:
+                    directions.append(dirs[d][0][c]) #d: monet trial number, 0: selects array, c: orientation index
+                    m_act.append(np.mean(sp_red[i:i+6])) #append mean activity to frames with same orientation
+                else:
+                    directions.append(dirs[d][0][c])
+                    m_act.append(np.mean(sp_red[i:]))
+                c+=1
+                trial_id.append(d)
+        d+=1
+    #Save them in a data frame  
+    df = pd.DataFrame({'orientation':directions, 'mean_activity':m_act, 'trial_id':trial_id})
+    
+    #Turn orientation in to radians
+    df['radians'] = df['orientation']*(np.pi/180)
+    df['session'] = [unit_key['session']]*df.shape[0]
+    df['scan_idx'] = [unit_key['scan_idx']]*df.shape[0]
+    df['unit_id'] = [unit_key['unit_id']]*df.shape[0]
+    
+    return df
+
 def von_mises(theta, A, phi, k):
     '''Function describing the tuning curve of the neurone to the orientation of the stimulus if the neurone is ONLY
     orientation selective
