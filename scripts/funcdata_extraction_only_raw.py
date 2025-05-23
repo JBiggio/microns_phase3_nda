@@ -24,33 +24,33 @@ v1l234_multiscan = v1l234_neur[v1l234_neur['pt_root_id'].isin(multiscan_ids)]
 session_scan_pairs = [(8,7), (4, 7), (5, 3), (5, 6),(5, 7),(6, 2),(6, 4),(6, 6),(6, 7),(7, 3),(7, 4),(7, 5),(8, 5), (9, 3), (9, 4), (9, 6)]
 
 #Check if storage folders for temporary data exist, if not make them
-#if os.path.isdir('../data/in_processing/orientation_fits') != True:
-#    os.makedirs('../data/in_processing/orientation_fits')
+if os.path.isdir('../data/in_processing/orientation_fits') != True:
+    os.makedirs('../data/in_processing/orientation_fits')
 
 
 #print('Starting Extraction of Single Scan...')
-#for pair in tqdm(session_scan_pairs, desc = 'Session and Scan Loop'):
+for pair in tqdm(session_scan_pairs, desc = 'Session and Scan Loop'):
     #change the frame per directions according to the one used for each session and scan
-#    fpd = fpd_assignment(pair[0], pair[1])
+    fpd = fpd_assignment(pair[0], pair[1])
 
     #Container with saved data
- #   data = []
+    data = []
 
     #Subset the cells for server limitation reasons
-  #  sub = v1l234_singlescan[(v1l234_singlescan['session'] == pair[0]) & (v1l234_singlescan['scan_idx'] == pair[1])]
+    sub = v1l234_singlescan[(v1l234_singlescan['session'] == pair[0]) & (v1l234_singlescan['scan_idx'] == pair[1])]
         
     #loop through cells
-  #  for i in tqdm(range(sub.shape[0]), desc = f'Extracting neurons of session: {pair[0]}, scan: {pair[1]}' ):
-  #      unit_key = {'session':sub.iloc[i, 2], 'scan_idx':sub.iloc[i, 3], 'unit_id':sub.iloc[i, 4]}
-#        df = orientation_extractor_v2(unit_key, fpd)
-   #     data.append(df)
+    for i in tqdm(range(sub.shape[0]), desc = f'Extracting neurons of session: {pair[0]}, scan: {pair[1]}' ):
+        unit_key = {'session':sub.iloc[i, 2], 'scan_idx':sub.iloc[i, 3], 'unit_id':sub.iloc[i, 4]}
+        df = orientation_extractor_v2(unit_key, fpd)
+        data.append(df)
     #Save the data
-  #  data_df =  pd.concat(data, axis = 0)
-   # data_df.to_pickle(f'./data/in_processing/activities/activities_{pair[0]}_{pair[1]}.pkl')
+    data_df =  pd.concat(data, axis = 0)
+    data_df.to_pickle(f'./data/in_processing/activities/activities_{pair[0]}_{pair[1]}.pkl')
         
     #Clean RAM
- #   del sub, unit_key, df
- #   gc.collect()    
+    del sub, unit_key, df
+    gc.collect()    
 
 #print('Extraction single scan finished')
 print('Starting extraction Multiscan...')
@@ -84,18 +84,18 @@ print('Extraction multi scan finished, saving data')
 
 #Joining all of the DataFrames
 #Loading the first file in the directory
-#ors_all = pd.read_pickle(f"./data/in_processing/activities/{os.listdir('./data/in_processing/activities')[0]}")
+ors_all = pd.read_pickle(f"./data/in_processing/activities/{os.listdir('./data/in_processing/activities')[0]}")
 
 #Loading the rest iteratively and concatenating
-#for file in tqdm(os.listdir('./data/in_processing/activities/')[1:], desc='Aggregating session, scan files'):
- #   if file!='.DS_Store':
-  #      cont_df = pd.read_pickle(f'./data/in_processing/activities/{file}')
-  #      ors_all = pd.concat([ors_all, cont_df], axis = 0)
-  #  else:
-  #      continue
+for file in tqdm(os.listdir('./data/in_processing/activities/')[1:], desc='Aggregating session, scan files'):
+    if file!='.DS_Store':
+        cont_df = pd.read_pickle(f'./data/in_processing/activities/{file}')
+        ors_all = pd.concat([ors_all, cont_df], axis = 0)
+    else:
+        continue
 
 #Saving the data
-#ors_all.to_pickle('./data/in_processing/activities.pkl')
+ors_all.to_pickle('./data/in_processing/activities.pkl')
 
 #Delete unnecessary data repeats
 #shutil.rmtree('../data/in_processing/orientation_fits')
