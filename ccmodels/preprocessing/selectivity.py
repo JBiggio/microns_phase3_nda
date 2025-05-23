@@ -235,7 +235,7 @@ def orientation_extractor_v3(unit_key, fpd):
                 if c < 16:
                     directions.append(dirs[d][0][c]) #d: monet trial number, 0: selects array, c: orientation index
                     m_act.append(np.mean(sp_red[i:i+6])) #append mean activity to frames with same orientation
-                    full_act.append(sp_red[i:i+fpd]) #append FULL activity to frames with same orientation
+                    full_act.append(sp_red[i:i+6]) #append FULL activity to frames with same orientation
                 else:
                     directions.append(dirs[d][0][c])
                     m_act.append(np.mean(sp_red[i:]))
@@ -246,7 +246,7 @@ def orientation_extractor_v3(unit_key, fpd):
                 conditional_hash.append(singular_cond_hash)
         d+=1
     #Save them in a data frame  
-    df = pd.DataFrame({'orientation':directions, 'mean_activity':m_act, 'trial_id':trial_id, 'monet2_trial_id': monet2_trial_id, 'condition_hash':conditional_hash})
+    df = pd.DataFrame({'orientation':directions, 'mean_activity':m_act, 'full_activity': full_act, 'trial_id':trial_id, 'monet2_trial_id': monet2_trial_id, 'condition_hash':conditional_hash})
     
     #Turn orientation in to radians
     df['radians'] = df['orientation']*(np.pi/180)
